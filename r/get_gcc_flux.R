@@ -4,6 +4,7 @@ library(gridExtra)
 # library(HIEv)
 library(raster)
 library(readr)
+library(exifr)
 
 source('r/function_get_gcc.R')
 
@@ -15,12 +16,12 @@ source('r/function_get_gcc.R')
 # polygon(c(0.0,0.6,0.6,0.0),c(0.1,0.1,0.9,0.9))
 
 
-path.nm = 'download/control/'
-gcc.control.df = get_gcc_func(path.nm,c(0.3,0.8,0.1,0.9))
+path.nm = 'control'
+gcc.control.df = cal.gcc.site.func(site.nm=path.nm,c(0.3,0.8,0.1,0.9))
 write.csv(gcc.control.df,'control.gcc.csv',row.names = F)
 
-path.nm = 'download/irrigated/'
-gcc.irrigated.df= get_gcc_func(path.nm,c(0,0.6,0.1,0.9))
+site.nm = 'irrigated'
+gcc.irrigated.df= cal.gcc.site.func(site.nm,ROI=c(0,0.6,0.1,0.9))
 
 
 

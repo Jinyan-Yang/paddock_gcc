@@ -52,17 +52,24 @@ get_gcc_func <- function(fn, ROI=NULL){
   # read and calculate gcc
   temp.ls <- list()
   for(i in seq_along(fn)){
-    temp.ls[[i]] <- processImage.new(fn[i], ROI=ROI)
+    
+    df <-  try(processImage.new(fn[i], ROI=ROI))
+    if(class(df) != 'try-error'){
+      temp.ls[[i]] <- df
+    }
+    
   }
-  
-  # put gcc into a data frame
-  gcc.day.df <- do.call(rbind,temp.ls)
-  
-  # gcc.day.df$DateTime <- as.Date(as.character(date.vec),'%Y%m%d')
-  gcc.day.df$DateTime <- strptime(as.character(date.vec),'%Y:%m:%d %H:%M:%S')
-  gcc.day.df$Date <-  as.Date(gcc.day.df$DateTime,'%Y:%m:%d')
-  
-  return(gcc.day.df)
+  if(length(temp.ls)>0){
+    # put gcc into a data frame
+    gcc.day.df <- do.call(rbind,temp.ls)
+    
+    # gcc.day.df$DateTime <- as.Date(as.character(date.vec),'%Y%m%d')
+    gcc.day.df$DateTime <- strptime(as.character(date.vec),'%Y:%m:%d %H:%M:%S')
+    gcc.day.df$Date <-  as.Date(gcc.day.df$DateTime,'%Y:%m:%d')
+    
+    return(gcc.day.df)
+  }
+
   
 }
 
@@ -82,30 +89,27 @@ get.smooth.gcc.func = function(Date.vec,gcc.vec){
 
 # 
 cal.gcc.site.func <- function(site.nm,ROI){
-  site.folders <- list.files(file.path('pic',site.nm))
+  site.folders <- list.files(file.path('download',site.nm),full.names = T)
   
+  # define the nm of output file
+  out.nm <- sprintf('cache/gcc_%s.rds',site.nm)
+  
+  # check if the output file exists
+  if(!file.exists(out.nm)){
+    gcc.old.df <- data.frame(filename = NULL,
+                             GCC=NULL,
+                             RCC = NULL,
+                             BCC = NULL,
+                             RGBtot = NULL,
+                             DateTime = NULL,
+                             Date = NULL)
+    saveRDS(gcc.old.df,out.nm)
+  }
+  gcc.old.df <- readRDS(out.nm)
   # loop through plots
-  for(i in seq_along(site.folders)){
-    # define the nm of output file
-    out.nm <- sprintf('cache/gcc_%s_%s.rds',site.nm,site.folders[i])
-    
-    # check if the output file exists
-    if(!file.exists(out.nm)){
-      gcc.old.df <- data.frame(filename = NULL,
-                               GCC=NULL,
-                               RCC = NULL,
-                               BCC = NULL,
-                               RGBtot = NULL,
-                               DateTime = NULL,
-                               Date = NULL)
-      saveRDS(gcc.old.df,out.nm)
-    }
-    
-    # list all photos of the plot
-    pic.vec <- list.files(sprintf('pic/%s/%s',site.nm,site.folders[i]),full.names = T)
-    
+
     # take only those are not prcessed yet
-    unprocessed.vec <- setdiff(pic.vec, gcc.old.df$filename)
+    unprocessed.vec <- setdiff(site.folders, gcc.old.df$filename)
 
     if(length(unprocessed.vec)>0){
       
@@ -113,23 +117,27 @@ cal.gcc.site.func <- function(site.nm,ROI){
       for(j in seq_along(unprocessed.vec)){
         
         # get old gcc
-        gcc.old.df <- readRDS(out.nm)
+        # gcc.old.df <- readRDS(out.nm)
         
         # calculated GCC
-        gcc.new.df <- get_gcc_func(unprocessed.vec[j],ROI = ROI)
+        gcc.new.df <-try( get_gcc_func(unprocessed.vec[j],ROI = ROI))
         
-        # put old and new gcc together
-        gcc.out.df <- rbind(gcc.old.df,gcc.new.df)
- 
-        saveRDS(gcc.out.df,out.nm)
+        if(class(gcc.new.df) != 'try-error'){
+          # put old and new gcc together
+          gcc.out.df <- rbind(gcc.old.df,gcc.new.df)
+          
+          saveRDS(gcc.out.df,out.nm)
+          
+          # do a print to check prograss 
+          print(unprocessed.vec[j])
+        }
         
-        # do a print to check prograss 
-        print(unprocessed.vec[j])
+       
       }
       
     }
     
   }
   
-}
+
 

@@ -3,9 +3,13 @@ soil.fn.vec <- list.files(path='data/swc/Control/slow/',pattern = 'FluxCon_soil_
 
 tmp.ls <- list()
 for(i in seq_along(soil.fn.vec)){
-  tmp.df <- read.table(soil.fn.vec[i],header=T,skip=1,sep=',')
+  tmp.df <- try(read.table(soil.fn.vec[i],header=T,skip=1,sep=','))
   
-  tmp.ls[[i]] <- tmp.df[c(-1,-2),]
+  if(!class(tmp.df)=='try-error'){
+    tmp.ls[[i]] <- tmp.df[c(-1,-2),]
+  }
+  
+  
 }
 swc.con.df <- do.call(rbind,tmp.ls)
 swc.con.df$treat <- 'control'
@@ -15,9 +19,11 @@ soil.fn.vec.irrig <- list.files(path='data/swc/Irrig/slow/',pattern = 'FluxIrr_s
 
 tmp.ls.irrig <- list()
 for(i in seq_along(soil.fn.vec.irrig)){
-  tmp.df <- read.table(soil.fn.vec.irrig[i],header=T,skip=1,sep=',')
+  tmp.df <- try(read.table(soil.fn.vec.irrig[i],header=T,skip=1,sep=','))
   
-  tmp.ls.irrig[[i]] <- tmp.df[c(-1,-2),]
+  if(!class(tmp.df)=='try-error'){
+    tmp.ls.irrig[[i]] <- tmp.df[c(-1,-2),]
+  }
 }
 swc.irg.df <- do.call(rbind,tmp.ls.irrig)
 swc.irg.df$treat <- 'irrigated'
@@ -33,6 +39,9 @@ swc.paddock.df$VWC_Avg[swc.paddock.df$VWC_Avg >=0.6] <-NA
 swc.paddock.df$VWC_Avg[swc.paddock.df$VWC_Avg ==0] <-NA
 swc.paddock.df$treat <- as.factor(swc.paddock.df$treat)
 swc.paddock.df <- swc.paddock.df[!is.na(swc.paddock.df$TIMESTAMP),]
+
+
+saveRDS(swc.paddock.df,'cache/flux_swc.df.rds')
 # 
 devtools::source_url("https://github.com/Jinyan-Yang/colors/blob/master/R/col.R?raw=TRUE")
 palette(col.df$flower)
